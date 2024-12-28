@@ -39,28 +39,28 @@ const ChatWindow = () => {
       })
 
       const userIDs = [currentUser.uid, user.uid]
-
       userIDs.forEach(async (id) => {
-        const userChatsRef = doc(dbFirestore, "userChats", currentUser.uid)
-
+        const userChatsRef = doc(dbFirestore, "userChats", id)
         const userChatsSnapshot = await getDoc(userChatsRef)
         console.log(userChatsSnapshot)
         if (userChatsSnapshot.exists()) {
-          debugger
           const userChatsData = userChatsSnapshot.data()
+          debugger
+          console.log(typeof (userChatsData))
           const chatIndex = userChatsData.chats.findIndex(c => c.chatId === chatId)
-          userChatsData[chatIndex].lastMessage = text;
-          userChatsData[chatIndex].isSeen = id === currentUser.uid ? true : false;
-          userChatsData[chatIndex].updatedAt = Date.now();
+          userChatsData.chats[chatIndex].lastMessage = text;
+          userChatsData.chats[chatIndex].isSeen = id === currentUser.uid ? true : false;
+          userChatsData.chats[chatIndex].updatedAt = Date.now();
+          await updateDoc(userChatsRef, {
+            chats: userChatsData.chats
+          })
         }
       })
     }
     catch (err) { }
   }
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [text])
+  //
 
   useEffect(() => {
     if (!chatId) return
