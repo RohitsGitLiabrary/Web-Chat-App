@@ -1,4 +1,4 @@
-import { React, useEffect } from "react";
+import { React } from "react";
 import { dbFirestore, useFirebase } from "../Firebase/Firebase";
 import { useChatcontext } from "../context/Chatcontext";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
@@ -6,7 +6,7 @@ import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
 const UserDetail = () => {
   const { currentUser } = useFirebase()
   const firebaseContext = useFirebase();
-  const { changeChat, changeBlock, chatId, receiverBlockedArray, user, isReceiverBlocked, isCurrentUserBlocked } = useChatcontext()
+  const { changeBlock, user, isReceiverBlocked, isCurrentUserBlocked } = useChatcontext()
 
 
   const handleLogout = async (e) => {

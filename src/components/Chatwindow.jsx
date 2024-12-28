@@ -31,7 +31,7 @@ const ChatWindow = () => {
     if (text === "") return;
     try {
       await updateDoc(doc(dbFirestore, "chats", chatId), {
-        message: arrayUnion({
+        messages: arrayUnion({
           senderId: currentUser.uid,
           text,
           createdAt: new Date(),
@@ -45,7 +45,6 @@ const ChatWindow = () => {
         console.log(userChatsSnapshot)
         if (userChatsSnapshot.exists()) {
           const userChatsData = userChatsSnapshot.data()
-          debugger
           console.log(typeof (userChatsData))
           const chatIndex = userChatsData.chats.findIndex(c => c.chatId === chatId)
           userChatsData.chats[chatIndex].lastMessage = text;
@@ -57,12 +56,15 @@ const ChatWindow = () => {
         }
       })
     }
-    catch (err) { }
+    catch (err) {
+      console.log(err.message)
+    }
   }
 
   //
 
   useEffect(() => {
+
     if (!chatId) return
     const unSub = onSnapshot(doc(dbFirestore, "chats", chatId),
       (res) => {
@@ -71,6 +73,8 @@ const ChatWindow = () => {
     return () => { }
   }, [chatId])
 
+
+  // console.log(chat.message)
 
   return (
     <div className="w-full lg:w-1/2 h-screen bg-gray-50 flex flex-col">
@@ -102,18 +106,20 @@ const ChatWindow = () => {
         </div>
       </div>
 
+
       {/* Chat Messages */}
       <div className="flex-1 p-4 overflow-y-auto">
-        {/* {
-          [...Array(20)].map((_, index) => (
-            <div key={index} className={`mb-4 ${index % 2 === 0 ? "text-right" : "text-left"}`}>
-              <div className={`inline-block px-4 py-2 rounded-lg ${index % 2 === 0 ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"}`}>
-                {index % 2 === 0 ? "This is a sent message." : "This is a received message."}
+        {chat &&
+          chat.messages.map((msg) => (
+            <div key={msg.createdAt} className={`mb-4 ${msg.senderId === currentUser.uid ? "text-right" : "text-left"}`}>
+              <div className={`inline-block px-4 py-2 rounded-lg ${msg.senderId === currentUser.uid ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"}`}>
+                {msg.senderId === currentUser.uid ? msg.text : msg.text}
               </div>
             </div>
           ))
-        } */}
+        }
       </div>
+
 
       {/* Chat Input */}
       <div className="p-4 bg-white border-t sticky bottom-0 flex items-center space-x-2">
@@ -173,7 +179,7 @@ const ChatWindow = () => {
           Send
         </button>
       </div>
-    </div>
+    </div >
 
   )
 

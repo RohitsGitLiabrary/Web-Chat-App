@@ -27,7 +27,7 @@ export const ChatcontextProvider = (props) => {
             setCurrentUserBlockedArray(doc.data().blocked)
         });
 
-    }, [currentUser, chatId, user, currentUserBlockedArray])
+    }, [currentUser, chatId])
 
 
     const handlechatId = (chatId, user) => {
