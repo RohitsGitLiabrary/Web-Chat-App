@@ -1,36 +1,76 @@
 import { React, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { useFirebase, firebaseAuth } from "../Firebase/Firebase";
+import { useFirebase, firebaseAuth, error } from "../Firebase/Firebase";
+import "react-toastify/dist/ReactToastify.css";
 
 const Signin = () => {
   const firebaseContext = useFirebase();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
   const navigate = useNavigate();
 
   const handleSignIn = async (e) => {
     e.preventDefault();
+    setLoading(true)
+    if (!email) {
+      setErrorMsg("Email is required!");
+      setLoading(false);
+      return;
+    }
+
+    if (!password) {
+      setErrorMsg("Password is required!");
+      setLoading(false);
+      return;
+    }
+
     try {
-      debugger;
-      setLoading(true);
-      await firebaseContext.loginUserWithEmailAndPassword(email, password);
-      console.log("Log In success");
-      alert("Login Successful!");
-    } catch (err) {
-      console.error("Error during login:", err);
-      alert(err.message); // Show error to the user
-    } finally {
-      setLoading(false); // Ensure loading is reset in all cases
+      firebaseContext.loginUserWithEmailAndPassword(email, password);
+    } catch {
+      setErrorMsg("Unexpected error ocurred, please try again after some time.")
     }
   };
+
+  useEffect(() => {
+    if (!email && !password) return
+    switch (firebaseContext.error) {
+      case "auth/invalid-credential":
+        setErrorMsg("Invalid Username or Password");
+        setLoading(false);
+        break;
+      case "auth/invalid-email":
+        setErrorMsg("Invalid Email ID");
+        setLoading(false);
+        break;
+      case "auth/user-not-found":
+        setErrorMsg("No user found with this email.");
+        setLoading(false);
+        break;
+      case "auth/wrong-password":
+        setErrorMsg("The password is incorrect.");
+        setLoading(false);
+        break;
+      case "auth/internal-error	":
+        setErrorMsg("The Authentication server encountered an unexpected error. Please try again after some time.");
+        setLoading(false);
+        break;
+      default:
+        setErrorMsg("An error occurred. Please try again.");
+        setLoading(false);
+        break;
+    }
+  }, [firebaseContext.error])
+
+
   useEffect(() => {
     onAuthStateChanged(firebaseAuth, (user) => {
       try {
         firebaseContext.fetchUserInfo(user.uid);
       } catch (err) {
-        console.log("UID not found");
+        console.log(err.message);
       }
     });
   }, [firebaseContext.fetchUserInfo, firebaseContext]);
@@ -82,6 +122,11 @@ const Signin = () => {
               placeholder="Enter your password"
             />
           </div>
+          {errorMsg && (
+            <div className="text-red-500 text-sm text-center mb-4">
+              {errorMsg}
+            </div>
+          )}
           <button
             type="submit"
             // className="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"

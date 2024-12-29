@@ -1,31 +1,33 @@
 import { arrayUnion, doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { dbFirestore, useFirebase } from "../Firebase/Firebase";
 import { useChatcontext } from "../context/Chatcontext";
-import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
+import data from '@emoji-mart/data';
 
 const ChatWindow = () => {
   const [chat, setChat] = useState()
-  const [open, setOpen] = useState(false)
   const [text, setText] = useState("")
-  const [message, setMessage] = useState('');
 
-  const { changeChat, changeBlock, chatId, user, isReceiverBlocked, isCurrentUserBlocked } = useChatcontext()
+  const { chatId, user, isReceiverBlocked, isCurrentUserBlocked } = useChatcontext()
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { currentUser } = useFirebase()
 
 
+  const handleSetText = (e) => {
+    setText(e.target.value)
+  }
+
 
   const handleEmojiClick = (emoji) => {
-    setMessage((prev) => prev + emoji.native);
+    console.log(emoji.native);
+    setText((prevText) => prevText + emoji.native);
   };
 
   const toggleEmojiPicker = () => {
     setShowEmojiPicker(!showEmojiPicker);
   };
 
-  const endRef = useRef(null)
 
   const handleSent = async () => {
     if (text === "") return;
@@ -59,9 +61,13 @@ const ChatWindow = () => {
     catch (err) {
       console.log(err.message)
     }
+    setText('')
   }
 
-  //
+  useEffect(() => {
+    // Scroll to the bottom of the page
+    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+  }, []); // Empty dependency array ensures this runs only on mount
 
   useEffect(() => {
 
@@ -73,8 +79,6 @@ const ChatWindow = () => {
     return () => { }
   }, [chatId])
 
-
-  // console.log(chat.message)
 
   return (
     <div className="w-full lg:w-1/2 h-screen bg-gray-50 flex flex-col">
@@ -109,7 +113,7 @@ const ChatWindow = () => {
 
       {/* Chat Messages */}
       <div className="flex-1 p-4 overflow-y-auto">
-        {chat &&
+        {chat && currentUser?.uid &&
           chat.messages.map((msg) => (
             <div key={msg.createdAt} className={`mb-4 ${msg.senderId === currentUser.uid ? "text-right" : "text-left"}`}>
               <div className={`inline-block px-4 py-2 rounded-lg ${msg.senderId === currentUser.uid ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"}`}>
@@ -128,13 +132,17 @@ const ChatWindow = () => {
           className="w-9 h-9 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-300 text-xl"
           title="Add Emoji"
           onClick={toggleEmojiPicker}
+          disabled={isCurrentUserBlocked || isReceiverBlocked}
+          style={{
+            cursor: isCurrentUserBlocked || isReceiverBlocked ? 'not-allowed' : 'pointer', // Change cursor dynamically
+          }}
         >
           😊
         </button>
 
         {showEmojiPicker && (
           <div className="absolute bottom-16 right-0 z-10 w-64 bg-white border rounded-lg shadow-md">
-            <Picker onSelect={handleEmojiClick} />
+            <Picker data={data} onEmojiSelect={handleEmojiClick} />
           </div>
         )}
 
@@ -158,7 +166,7 @@ const ChatWindow = () => {
         <input
           type="text"
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={handleSetText}
           disabled={isCurrentUserBlocked || isReceiverBlocked}
           style={{
             cursor: isCurrentUserBlocked || isReceiverBlocked ? 'not-allowed' : '', // Change cursor dynamically

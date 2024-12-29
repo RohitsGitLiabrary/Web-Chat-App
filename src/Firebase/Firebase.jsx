@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { createContext, useContext, useEffect, useState } from "react";
-import { initializeApp } from "firebase/app";
+import { FirebaseError, initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import {
   getAuth,
@@ -11,6 +11,7 @@ import {
 import { doc, setDoc, getDoc } from "firebase/firestore";
 // import config from "../config";
 import { useLocation, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 const FirebaseContext = createContext(null);
 
 // Your web app's Firebase configuration
@@ -27,7 +28,6 @@ const firebaseConfig = {
   messagingSenderId: process.env.REACT_APP_MESSANGER_ID,
   appId: process.env.REACT_APP_APP_ID
 };
-console.log(process.env.apiKey);
 
 export const useFirebase = () => useContext(FirebaseContext); // This is now inside a function
 // Initialize Firebase
@@ -65,9 +65,22 @@ export const FirebaseProvider = (props) => {
       chats: [],
     });
   };
-  const loginUserWithEmailAndPassword = (email, password) => {
-    signInWithEmailAndPassword(firebaseAuth, email, password);
+
+
+  // User Login Error handeling
+
+  const [error, setError] = useState(null)
+  const loginUserWithEmailAndPassword = async (email, password) => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
+      console.log(userCredential.user)
+    }
+    catch (err) {
+      console.log(err.code)
+      setError(err.code)
+    }
   };
+
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -100,8 +113,8 @@ export const FirebaseProvider = (props) => {
   }, [currentUser, isLoggedIn, navigate, isSignupPage]);
 
   const Logout = () => {
-    signOut(firebaseAuth)
     setCurrentUser(null)
+    signOut(firebaseAuth)
   }
   return (
     <FirebaseContext.Provider
@@ -113,6 +126,7 @@ export const FirebaseProvider = (props) => {
         currentUser,
         loading,
         Logout,
+        error
       }}
     >
       {props.children}
