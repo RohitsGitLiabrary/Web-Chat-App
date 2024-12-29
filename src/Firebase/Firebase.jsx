@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { createContext, useContext, useEffect, useState } from "react";
-import { FirebaseError, initializeApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import {
   getAuth,
@@ -35,7 +35,9 @@ export const firebaseApp = initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(firebaseApp);
 
 export const FirebaseProvider = (props) => {
+
   const signupUserWithEmailandPassword = async (
+
     email,
     password,
     firstName,
@@ -50,6 +52,7 @@ export const FirebaseProvider = (props) => {
       email,
       password
     );
+    debugger
     await setDoc(doc(dbFirestore, "users", (uid = res.user.uid)), {
       email,
       password,
@@ -64,6 +67,8 @@ export const FirebaseProvider = (props) => {
     await setDoc(doc(dbFirestore, "userChats", uid), {
       chats: [],
     });
+    setCurrentUser(null)
+    navigate("/")
   };
 
 
