@@ -38,8 +38,6 @@ export const ChatcontextProvider = (props) => {
     const changeChat = async (chatId, user, usersBlockedArray) => {
 
         setReceiverBlockedArray(usersBlockedArray)
-        console.log("Context :", receiverBlockedArray)
-
         if (currentUserBlockedArray.includes(user.uid)) {
             setChatId(chatId);
             setUser(user);

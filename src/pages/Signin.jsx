@@ -13,6 +13,7 @@ const Signin = () => {
   const navigate = useNavigate();
 
   const handleSignIn = async (e) => {
+    debugger
     e.preventDefault();
     setLoading(true)
     if (!email) {
@@ -20,13 +21,11 @@ const Signin = () => {
       setLoading(false);
       return;
     }
-
     if (!password) {
       setErrorMsg("Password is required!");
       setLoading(false);
       return;
     }
-
     try {
       firebaseContext.loginUserWithEmailAndPassword(email, password);
     } catch {

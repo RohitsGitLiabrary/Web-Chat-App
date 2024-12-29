@@ -30,12 +30,11 @@ const ChatList = ({ onClick }) => {
 
   const handleSelect = async (chat) => {
     try {
-      console.log("Chatlist :", chat.user.blocked)
+      changeChat(chat.chatId, chat.user, chat.user.blocked)
     }
     catch (err) {
       console.log(err)
     }
-    changeChat(chat.chatId, chat.user, chat.user.blocked)
   }
   return (
     <div className=" h-screen bg-white border-r flex flex-col">
@@ -69,7 +68,6 @@ const ChatList = ({ onClick }) => {
         ))}
 
       </div>
-
     </div >
   );
 };

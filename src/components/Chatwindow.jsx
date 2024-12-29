@@ -1,6 +1,6 @@
 import { arrayUnion, doc, getDoc, onSnapshot, updateDoc } from "firebase/firestore";
-import React, { useEffect, useState } from "react";
-import { dbFirestore, useFirebase } from "../Firebase/Firebase";
+import React, { useEffect, useState, useRef } from "react";
+import { dbFirestore, useFirebase, Timestamp } from "../Firebase/Firebase";
 import { useChatcontext } from "../context/Chatcontext";
 import Picker from '@emoji-mart/react'
 import data from '@emoji-mart/data';
@@ -12,12 +12,11 @@ const ChatWindow = () => {
   const { chatId, user, isReceiverBlocked, isCurrentUserBlocked } = useChatcontext()
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const { currentUser } = useFirebase()
-
+  const containerRef = useRef(null);
 
   const handleSetText = (e) => {
     setText(e.target.value)
   }
-
 
   const handleEmojiClick = (emoji) => {
     console.log(emoji.native);
@@ -27,7 +26,6 @@ const ChatWindow = () => {
   const toggleEmojiPicker = () => {
     setShowEmojiPicker(!showEmojiPicker);
   };
-
 
   const handleSent = async () => {
     if (text === "") return;
@@ -64,10 +62,6 @@ const ChatWindow = () => {
     setText('')
   }
 
-  useEffect(() => {
-    // Scroll to the bottom of the page
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-  }, []); // Empty dependency array ensures this runs only on mount
 
   useEffect(() => {
 
@@ -76,9 +70,18 @@ const ChatWindow = () => {
       (res) => {
         setChat(res.data())
       })
+
     return () => { }
   }, [chatId])
 
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: "smooth", // Enables smooth scrolling
+      });
+    }
+  }, [chat]);
 
   return (
     <div className="w-full lg:w-1/2 h-screen bg-gray-50 flex flex-col">
@@ -112,7 +115,9 @@ const ChatWindow = () => {
 
 
       {/* Chat Messages */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      {/* <div className="flex-1 p-4 overflow-y-auto"
+        ref={containerRef}
+      >
         {chat && currentUser?.uid &&
           chat.messages.map((msg) => (
             <div key={msg.createdAt} className={`mb-4 ${msg.senderId === currentUser.uid ? "text-right" : "text-left"}`}>
@@ -122,7 +127,40 @@ const ChatWindow = () => {
             </div>
           ))
         }
+      </div> */}
+
+      <div
+        className="flex-1 p-4 overflow-y-auto"
+        ref={containerRef}
+      >
+        {chat &&
+          currentUser?.uid &&
+          chat.messages.map((msg) => (
+            <div
+              key={msg.createdAt}
+              className={`mb-4 ${msg.senderId === currentUser.uid ? "text-right" : "text-left"
+                }`}
+            >
+              <div
+                className={`inline-block px-4 py-2 rounded-lg ${msg.senderId === currentUser.uid
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-800"
+                  }`}
+              >
+                {msg.text}
+              </div>
+              <div
+                className={`text-xs mt-1 ${msg.senderId === currentUser.uid
+                  ? "text-gray-500"
+                  : "text-gray-500"
+                  }`}
+              >
+                {msg.createdAt.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}
+              </div>
+            </div>
+          ))}
       </div>
+
 
 
       {/* Chat Input */}
@@ -150,6 +188,10 @@ const ChatWindow = () => {
         <button
           className="w-9 h-9 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-300 text-xl"
           title="Attach File"
+          disabled={isCurrentUserBlocked || isReceiverBlocked}
+          style={{
+            cursor: isCurrentUserBlocked || isReceiverBlocked ? 'not-allowed' : 'pointer', // Change cursor dynamically
+          }}
         >
           📎
         </button>
@@ -158,6 +200,10 @@ const ChatWindow = () => {
         <button
           className="w-9 h-9 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-300 text-xl"
           title="Record Voice"
+          disabled={isCurrentUserBlocked || isReceiverBlocked}
+          style={{
+            cursor: isCurrentUserBlocked || isReceiverBlocked ? 'not-allowed' : 'pointer', // Change cursor dynamically
+          }}
         >
           🎤
         </button>
