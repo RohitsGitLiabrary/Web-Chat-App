@@ -75,6 +75,7 @@ const ChatWindow = () => {
   }, [chatId])
 
   useEffect(() => {
+    if (!chat) return
     if (containerRef.current) {
       containerRef.current.scrollTo({
         top: containerRef.current.scrollHeight,
@@ -90,7 +91,13 @@ const ChatWindow = () => {
 
         {/* Left side: User info */}
         <div className="flex items-center">
-          <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+          <div className="w-10 h-10 bg-gray-300 rounded-full">
+            {user && < img
+              src={user.imgURL}
+              alt="Profile"
+              className="w-full h-full object-cover"
+            />}
+          </div>
           <div className="ml-3">
             <h3 className="font-medium text-gray-800">
               {isCurrentUserBlocked || isReceiverBlocked ? "Webchat User" : user?.firstName}
@@ -115,19 +122,6 @@ const ChatWindow = () => {
 
 
       {/* Chat Messages */}
-      {/* <div className="flex-1 p-4 overflow-y-auto"
-        ref={containerRef}
-      >
-        {chat && currentUser?.uid &&
-          chat.messages.map((msg) => (
-            <div key={msg.createdAt} className={`mb-4 ${msg.senderId === currentUser.uid ? "text-right" : "text-left"}`}>
-              <div className={`inline-block px-4 py-2 rounded-lg ${msg.senderId === currentUser.uid ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"}`}>
-                {msg.senderId === currentUser.uid ? msg.text : msg.text}
-              </div>
-            </div>
-          ))
-        }
-      </div> */}
 
       <div
         className="flex-1 p-4 overflow-y-auto"

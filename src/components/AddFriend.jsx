@@ -1,42 +1,48 @@
 import React, { useState } from "react";
-import { collection, query, where, or, getDocs, setDoc, serverTimestamp, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, query, where, or, getDocs, setDoc, serverTimestamp, doc, updateDoc, arrayUnion, onSnapshot } from "firebase/firestore";
 import { dbFirestore, useFirebase } from "../Firebase/Firebase";
 
 const AddFriend = ({ isOpen, onClose }) => {
   const { currentUser } = useFirebase();
   const [searchName, setSearchName] = useState(null)
-  const [user, setUser] = useState(null)
+  const [searchResults, setSearchResults] = useState([])
   if (!isOpen) return null;
 
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
-      onClose();
       setSearchName(null)
-      setUser(null)
+      setSearchResults([])
+
+      onClose();
     }
   };
   const handleSearch = async (e) => {
     e.preventDefault();
+    setSearchResults([])
 
     try {
-      const usersRef = collection(dbFirestore, "users");
-      console.log(usersRef)
-      const q = query(usersRef,
-        or(
-          where('firstName', '==', searchName), where('lastName', '==', searchName), where('username', '==', searchName)));
-      const querySnapShot = await getDocs(q)
-      console.log(querySnapShot)
-      if (!querySnapShot.empty) {
-        setUser(querySnapShot.docs[0].data())
-      }
+      const q = query(collection(dbFirestore, "users"), or(where('firstName', '==', searchName), where('lastName', '==', searchName), where('username', '==', searchName)));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const results = [];
+        querySnapshot.forEach((doc) => {
+          results.push(doc.data());
+        });
+
+        console.log("This is results :", results);
+        setSearchResults((prevResults) => [...prevResults, ...results])
+      });
+      return () => unsubscribe();
     }
     catch (err) {
-      console.log(err)
+      console.log(err.code)
     }
   }
-  const handleAdd = async () => {
+  console.log("This is searchResults :", searchResults)
+
+  const handleAdd = async (userUID) => {
     const chatRef = collection(dbFirestore, "chats")
     const userChatsRef = collection(dbFirestore, "userChats")
+
     try {
       const newChatRef = doc(chatRef)
 
@@ -44,11 +50,11 @@ const AddFriend = ({ isOpen, onClose }) => {
         createdAt: serverTimestamp(),
         messages: [],
       })
-      console.log(user.uid)
+      console.log(userUID)
       console.log(currentUser.uid)
 
-      if (user.uid === currentUser.uid) {
-        await updateDoc(doc(userChatsRef, user.uid), {
+      if (userUID === currentUser.uid) {
+        await updateDoc(doc(userChatsRef, userUID), {
           chats: arrayUnion({
             chatId: newChatRef.id,
             lastMessage: "",
@@ -58,7 +64,7 @@ const AddFriend = ({ isOpen, onClose }) => {
         })
       }
       else {
-        await updateDoc(doc(userChatsRef, user.uid), {
+        await updateDoc(doc(userChatsRef, userUID), {
           chats: arrayUnion({
             chatId: newChatRef.id,
             lastMessage: "",
@@ -70,7 +76,7 @@ const AddFriend = ({ isOpen, onClose }) => {
           chats: arrayUnion({
             chatId: newChatRef.id,
             lastMessage: "",
-            receiverId: user.uid,
+            receiverId: userUID,
             updatedAt: Date.now(),
           })
         })
@@ -89,7 +95,7 @@ const AddFriend = ({ isOpen, onClose }) => {
         {/* Close Icon */}
         <button
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 focus:outline-none"
-          onClick={onClose}
+          onClick={handleOverlayClick}
           aria-label="Close"
         >
           ✕
@@ -115,25 +121,25 @@ const AddFriend = ({ isOpen, onClose }) => {
 
         {/* Example User Results */}
 
-        {user &&
-          <div className="mt-4 space-y-4">
+        {searchResults && searchResults.map((result) =>
+          <div div className="mt-4 space-y-4" >
             <div className="flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-4">
                 <img
-                  src="https://via.placeholder.com/40"
-                  alt="User"
+                  src={result.imgURL}
+                  alt="UserPhoto"
                   className="w-10 h-10 rounded-full"
                 />
-                <span className="font-medium">{user.firstName} {user.lastName}</span>
+                <span className="font-medium">{result.firstName} {result.lastName}</span>
               </div>
               <button className="px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
-                onClick={handleAdd}
+                onClick={() => handleAdd(result.uid)}
               >
                 Add
               </button>
             </div>
           </div>
-        }
+        )}
 
       </div>
     </div>

@@ -1,7 +1,7 @@
-// Import the functions you need from the SDKs you need
 import { createContext, useContext, useEffect, useState } from "react";
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -9,15 +9,11 @@ import {
   signOut
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
-// import config from "../config";
 import { useLocation, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+
 const FirebaseContext = createContext(null);
 
 // Your web app's Firebase configuration
-
-
-// console.log('Database URL:', config.databaseUrl);
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_API_KEY,
@@ -33,11 +29,12 @@ export const useFirebase = () => useContext(FirebaseContext); // This is now ins
 // Initialize Firebase
 export const firebaseApp = initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(firebaseApp);
+export const firebaseStorage = getStorage(firebaseApp)
 
 export const FirebaseProvider = (props) => {
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   const signupUserWithEmailandPassword = async (
-
     email,
     password,
     firstName,
@@ -45,30 +42,44 @@ export const FirebaseProvider = (props) => {
     username,
     gender,
     dob,
+    imgURL,
     uid
   ) => {
-    const res = await createUserWithEmailAndPassword(
-      firebaseAuth,
-      email,
-      password
-    );
-    debugger
-    await setDoc(doc(dbFirestore, "users", (uid = res.user.uid)), {
-      email,
-      password,
-      firstName,
-      lastName,
-      username,
-      gender,
-      dob,
-      uid,
-      blocked: [],
-    });
-    await setDoc(doc(dbFirestore, "userChats", uid), {
-      chats: [],
-    });
-    setCurrentUser(null)
-    navigate("/")
+
+    try {
+      setIsSigningUp(true);
+      const res = await createUserWithEmailAndPassword(
+        firebaseAuth,
+        email,
+        password
+      );
+      debugger
+      await setDoc(doc(dbFirestore, "users", uid = res.user.uid), {
+        email,
+        password,
+        firstName,
+        lastName,
+        username,
+        gender,
+        dob,
+        imgURL,
+        uid,
+        blocked: [],
+      });
+      await setDoc(doc(dbFirestore, "userChats", uid), {
+        chats: [],
+      });
+      await signOut(firebaseAuth);
+      // Optionally clear local states
+      setCurrentUser(null);
+      // Navigate to the home page after successful signup
+      navigate("/");
+      window.location.reload()
+    } catch (err) {
+      console.log("Error signing up user:", err)
+    } finally {
+      setIsSigningUp(false)
+    }
   };
 
 
@@ -77,8 +88,7 @@ export const FirebaseProvider = (props) => {
   const [error, setError] = useState(null)
   const loginUserWithEmailAndPassword = async (email, password) => {
     try {
-      const userCredential = await signInWithEmailAndPassword(firebaseAuth, email, password);
-      console.log(userCredential.user)
+      await signInWithEmailAndPassword(firebaseAuth, email, password);
     }
     catch (err) {
       console.log(err.code)
@@ -110,9 +120,12 @@ export const FirebaseProvider = (props) => {
 
   const isSignupPage = location.pathname === "/Signup";
   useEffect(() => {
+    if (isSigningUp) return
+
     if (currentUser) {
       navigate("/Loggedinwindow");
-    } else if (!currentUser && !isSignupPage) {
+    }
+    else if (!currentUser && !isSignupPage) {
       navigate("/")
     }
   }, [currentUser, isLoggedIn, navigate, isSignupPage]);
@@ -121,11 +134,16 @@ export const FirebaseProvider = (props) => {
     setCurrentUser(null)
     signOut(firebaseAuth)
   }
+
+  const uploadProfilePicture = () => {
+
+  }
   return (
     <FirebaseContext.Provider
       value={{
         signupUserWithEmailandPassword,
         loginUserWithEmailAndPassword,
+        uploadProfilePicture,
         fetchUserInfo,
         isLoggedIn,
         currentUser,

@@ -1,14 +1,17 @@
-import { React, useState } from "react";
+import { React, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFirebase } from "../Firebase/Firebase"; // Import your Firebase app configuration
 import { FaGoogle, FaFacebook, FaTwitter } from "react-icons/fa";
-import { toast } from "react-toastify";
+import Cropper from "cropperjs";
+import "cropperjs/dist/cropper.css";
+import Uploadpicture from "../Firebase/Uploadpicture";
+
 
 const Signup = () => {
   //Instance initiation
   const navigate = useNavigate();
   const firebaseContext = useFirebase();
-
+  const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -16,6 +19,13 @@ const Signup = () => {
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
   const [username, setUsername] = useState("")
+  const [pfp, setPfp] = useState(null)
+  const [croppedImage, setCroppedImage] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+
+  const imageRef = useRef(null);
+  const cropperRef = useRef(null);
 
   const handleGoogleSignIn = () => { };
   const handleFacebookSignIn = () => { };
@@ -23,6 +33,8 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true)
+    const imgURL = await Uploadpicture(croppedImage)
     try {
       await firebaseContext.signupUserWithEmailandPassword(
         email,
@@ -31,13 +43,98 @@ const Signup = () => {
         lastName,
         username,
         gender,
-        dob
+        dob,
+        imgURL
       );
+      setEmail('');
+      setPassword('');
+      setFirstName('');
+      setLastName('');
+      setDob('');
+      setGender('');
+      setUsername('');
+      setCroppedImage(null)
+      setPfp(null)
     } catch (err) {
       console.log(err);
       console.log(err.message);
     }
+    finally {
+      setLoading(false)
+    }
   };
+
+  const handleFileChange = (e) => {
+    debugger
+    const file = e.target.files[0];
+    if (file) {
+      setPfp(URL.createObjectURL(file));
+      setIsModalOpen(true); // Open the cropper modal
+    }
+  };
+
+  // Initialize Cropper.js once the image is loaded
+  const initializeCropper = () => {
+    if (imageRef.current) {
+      cropperRef.current = new Cropper(imageRef.current, {
+        aspectRatio: 1, // Enforce square crop for circular shape
+        viewMode: 2, // Allow image to be bigger than the crop box
+        dragMode: "move", // Allow image dragging
+        autoCropArea: 1, // Default crop area size
+        cropBoxResizable: false, // Don't allow resizing of crop box
+        cropBoxMovable: true, // Allow moving the crop box
+        zoomable: true, // Allow zooming
+        scalable: true, // Allow scaling
+        ready() {
+          // Adjust cropper to have a circular frame
+          const cropBox = document.querySelector(".cropper-crop-box");
+          cropBox.style.borderRadius = "50%"; // Circular crop area
+        },
+      });
+    }
+  };
+
+  // Crop the image and create a circular preview
+  const handleCrop = () => {
+    if (cropperRef.current) {
+      const canvas = cropperRef.current.getCroppedCanvas({
+        width: 200, // Desired width of the cropped image
+        height: 200, // Desired height of the cropped image
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: "high",
+      });
+
+      // Create a circular image from the cropped square
+      const outputCanvas = document.createElement("canvas");
+      const context = outputCanvas.getContext("2d");
+
+      outputCanvas.width = 200;
+      outputCanvas.height = 200;
+      context.beginPath();
+      context.arc(100, 100, 100, 0, 2 * Math.PI);
+      context.closePath();
+      context.clip();
+      context.drawImage(canvas, 0, 0, 200, 200);
+
+      // setCroppedImage(outputCanvas.toDataURL("image/png"));
+
+      outputCanvas.toBlob((blob) => {
+        const file = new File([blob], 'cropped-image.png', { type: 'image/png' })
+        setCroppedImage(file)
+      })
+      setPfp(outputCanvas.toDataURL("image/png"))
+      setIsModalOpen(false); // Close the cropper modal after cropping
+    }
+  };
+
+  // Close the modal without saving the cropped image
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+
+
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
       {/* App Name */}
@@ -84,6 +181,8 @@ const Signup = () => {
               />
             </div>
           </div>
+
+
           <div className="mb-4">
             <label
               className="block text-sm font-medium text-gray-700 mb-1"
@@ -103,6 +202,82 @@ const Signup = () => {
               <option value="other">Other</option>
             </select>
           </div>
+
+
+
+
+          <div className="mb-4">
+            <label
+              htmlFor="pfp"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Upload Photo
+            </label>
+            <input
+              type="file"
+              id="pfp"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="w-full px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+
+            {/* Cropping Modal */}
+            {isModalOpen && (
+              <div
+                className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-20"
+                onClick={closeModal}
+              >
+                <div
+                  className="bg-white p-4 rounded-lg max-w-lg w-full relative"
+                  onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
+                >
+                  <div className="relative">
+                    <img
+                      ref={imageRef}
+                      src={pfp}
+                      alt="To Crop"
+                      onLoad={initializeCropper}
+                      className="max-w-full"
+                    />
+                  </div>
+
+                  <div className="mt-4 flex justify-between items-center">
+                    <button
+                      onClick={closeModal}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-lg"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleCrop}
+                      className="px-4 py-2 bg-blue-500 text-white rounded-lg"
+                    >
+                      Crop
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          </div>
+          {/* Cropped Image Preview */}
+          {croppedImage && (
+            <div className="mb-4 "> {/* Flexbox to align items to the right */}
+              <div className="block text-sm font-medium text-gray-700 mb-2"> {/* Preview text with reduced right margin */}
+                <p>Preview:</p>
+              </div>
+
+              <div className="w-24 h-24 rounded-full overflow-hidden border">
+                <img
+                  src={URL.createObjectURL(croppedImage)}
+                  alt="Cropped"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+          )}
+
+
           <div className="mb-4">
             <label
               className="block text-sm font-medium text-gray-700 mb-1"
@@ -169,9 +344,14 @@ const Signup = () => {
           <button
             type="submit"
             onClick={handleSubmit}
-            className="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
+            disabled={loading}
+            className="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300 flex justify-center items-center relative"
           >
-            Sign Up
+            {loading ? (
+              <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin"></div>
+            ) : (
+              'Sign Up'
+            )}
           </button>
 
           {/* Horizontal line after Sign Up button */}
@@ -216,8 +396,8 @@ const Signup = () => {
             </button>
           </p>
         </form>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

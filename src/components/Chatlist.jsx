@@ -57,7 +57,13 @@ const ChatList = ({ onClick }) => {
       <div className="flex-1 ">
         {chats.map((chat) => (
           <div className="flex items-center px-4 py-3 hover:bg-gray-100 cursor-pointer" key={chat.chatId} onClick={() => handleSelect(chat)}>
-            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+            <div className="w-10 h-10 bg-gray-300 rounded-full">
+              <img
+                src={chat.user.imgURL}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            </div>
             <div className="ml-3">
               <div >
                 <h3 className="font-medium text-gray-800">{chat.user.firstName}</h3>
@@ -66,7 +72,6 @@ const ChatList = ({ onClick }) => {
             </div>
           </div>
         ))}
-
       </div>
     </div >
   );

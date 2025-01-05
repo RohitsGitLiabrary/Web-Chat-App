@@ -2,6 +2,7 @@ import { React } from "react";
 import { dbFirestore, useFirebase } from "../Firebase/Firebase";
 import { useChatcontext } from "../context/Chatcontext";
 import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
+import localImage from "../images/unknown.jpg"
 
 const UserDetail = () => {
   const { currentUser } = useFirebase()
@@ -40,7 +41,13 @@ const UserDetail = () => {
   return (<div className="lg:flex lg:w-1/4 h-screen bg-white border-l flex-col">
     {/* User Info */}
     <div className="p-4 bg-gray-100 border-b sticky top-0 z-10">
-      <div className="w-20 h-20 bg-gray-300 rounded-full mx-auto"></div>
+      <div className="w-20 h-20 bg-gray-300 rounded-full mx-auto">
+        <img
+          src={isReceiverBlocked || isCurrentUserBlocked ? localImage : user?.imgURL}
+          alt="./"
+          className="w-full h-full object-cover"
+        />
+      </div>
       <h3 className="text-lg mt-4 text-center font-medium text-gray-800">
         {isCurrentUserBlocked ? "Webchat User" :
           isReceiverBlocked ? "Webchat User" : user?.firstName + " " + user?.lastName}

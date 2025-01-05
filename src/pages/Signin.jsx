@@ -13,7 +13,6 @@ const Signin = () => {
   const navigate = useNavigate();
 
   const handleSignIn = async (e) => {
-    debugger
     e.preventDefault();
     setLoading(true)
     if (!email) {
@@ -53,7 +52,7 @@ const Signin = () => {
         setLoading(false);
         break;
       case "auth/internal-error	":
-        setErrorMsg("The Authentication server encountered an unexpected error. Please try again after some time.");
+        setErrorMsg("The authentication server encountered an unexpected error. Please try again after some time.");
         setLoading(false);
         break;
       default:
@@ -73,6 +72,7 @@ const Signin = () => {
       }
     });
   }, [firebaseContext.fetchUserInfo, firebaseContext]);
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100">
@@ -128,7 +128,6 @@ const Signin = () => {
           )}
           <button
             type="submit"
-            // className="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300"
             className="w-full bg-blue-500 text-white font-medium py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-300 flex justify-center items-center relative"
             disabled={loading}
           >
