@@ -68,7 +68,7 @@ export const ChatcontextProvider = (props) => {
 
     return (
         <ChatContext.Provider
-            value={{ changeChat, changeBlock, chatId, user, handlechatId, isReceiverBlocked, isCurrentUserBlocked, receiverBlockedArray }}
+            value={{ changeChat, changeBlock, chatId, user, handlechatId, isReceiverBlocked, isCurrentUserBlocked, currentUserBlockedArray, receiverBlockedArray }}
         >
             {props.children}
         </ChatContext.Provider>

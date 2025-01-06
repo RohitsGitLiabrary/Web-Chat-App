@@ -24,3 +24,6 @@ yarn-error.log*
 
 Firebase config
 .env
+
+Cross origin resource 
+cors.json

@@ -6,7 +6,7 @@ import { useChatcontext } from "../context/Chatcontext";
 const ChatList = ({ onClick }) => {
   let [chats, setChats] = useState([])
   const { currentUser } = useFirebase();
-  const { changeChat, chatId, handlechatId } = useChatcontext()
+  const { changeChat, chatId, handlechatId, currentUserBlockedArray, receiverBlockedArray } = useChatcontext()
   useEffect(() => {
     if (!currentUser?.uid) return;
     const unSub = onSnapshot(

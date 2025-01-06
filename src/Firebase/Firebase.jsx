@@ -133,6 +133,7 @@ export const FirebaseProvider = (props) => {
   const Logout = () => {
     setCurrentUser(null)
     signOut(firebaseAuth)
+    window.location.reload()
   }
 
   const uploadProfilePicture = () => {
