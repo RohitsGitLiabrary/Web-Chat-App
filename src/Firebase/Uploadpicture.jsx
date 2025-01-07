@@ -5,7 +5,7 @@ const Uploadpicture = async (file) => {
     const date = new Date()
 
 
-    debugger
+
     const storageRef = ref(firebaseStorage, `images/${date + file}`);
 
     const uploadTask = uploadBytesResumable(storageRef, file);

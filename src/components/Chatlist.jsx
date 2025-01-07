@@ -4,9 +4,10 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { useChatcontext } from "../context/Chatcontext";
 
 const ChatList = ({ onClick }) => {
-  let [chats, setChats] = useState([])
+  const [chats, setChats] = useState([])
+  const [input, setInput] = useState('')
   const { currentUser } = useFirebase();
-  const { changeChat, chatId, handlechatId, currentUserBlockedArray, receiverBlockedArray } = useChatcontext()
+  const { changeChat } = useChatcontext()
   useEffect(() => {
     if (!currentUser?.uid) return;
     const unSub = onSnapshot(
@@ -36,6 +37,12 @@ const ChatList = ({ onClick }) => {
       console.log(err)
     }
   }
+
+
+  const filterdChats = chats.filter((c) =>
+    c.user.firstName.toLowerCase().includes(input.toLowerCase())
+  )
+
   return (
     <div className=" h-screen bg-white border-r flex flex-col">
 
@@ -44,6 +51,7 @@ const ChatList = ({ onClick }) => {
           type="text"
           placeholder="Search..."
           className="flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          onChange={(e) => setInput(e.target.value)}
         />
         <button
           onClick={onClick}
@@ -55,7 +63,7 @@ const ChatList = ({ onClick }) => {
       </div>
       {/* Chat Items */}
       <div className="flex-1 ">
-        {chats.map((chat) => (
+        {filterdChats.map((chat) => (
           <div className="flex items-center px-4 py-3 hover:bg-gray-100 cursor-pointer" key={chat.chatId} onClick={() => handleSelect(chat)}>
             <div className="w-10 h-10 bg-gray-300 rounded-full">
               <img

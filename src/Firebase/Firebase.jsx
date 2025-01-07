@@ -53,7 +53,6 @@ export const FirebaseProvider = (props) => {
         email,
         password
       );
-      debugger
       await setDoc(doc(dbFirestore, "users", uid = res.user.uid), {
         email,
         password,
